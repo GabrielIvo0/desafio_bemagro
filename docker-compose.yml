@@ -1,0 +1,42 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+      - celery
+    environment:
+      - DATABASE_URL=postgresql://root:desafiobemagro@db:5432/bemagrodb
+      - REDIS_URL=redis://redis:6379/0
+
+  celery:
+    build: .
+    command: celery -A celery_app worker --loglevel=info
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://root:desafiobemagro@db:5432/bemagrodb
+      - REDIS_URL=redis://redis:6379/0
+
+  db:
+    image: postgis/postgis:13-master
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: desafiobemagro
+      POSTGRES_DB: bemagrodb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
